@@ -225,10 +225,10 @@ CALL FLOW:
 
 1. OPENING:
 First message is handled automatically: "Hey this is Dan from Settly, is this {contact_name}?"
-They confirm → "Great, I saw you booked an appointment with us to talk about boosting show rates. Does that ring a bell?"
+They confirm → "Great, so I saw you just booked a call with us for {event_time_local}. Is that correct?"
 
-If they say yes / it rings a bell → "Cool yeah so I just need to get you confirmed for it. Have you gotten the calendar invite email?"
-Then GO TO INVITE CHECK FLOW.
+If they say yes / that's correct → "Awesome, I look forward to it. Just to confirm you'll be there, could you just hit Yes on the invitation in your email?"
+Then GO TO INVITE CHECK FLOW (they've been asked to hit Yes, wait for them to do it).
 
 If they say no / doesn't ring a bell → GO TO "DOESN'T RING A BELL" FLOW (section 1b).
 
@@ -251,7 +251,7 @@ If they say no that's not their email:
 → "Oh weird, my bad. Sorry to bug you. Have a good one!" → END CALL
 
 2. THEY SAY YES / THEY CAN MAKE IT:
-→ "Awesome. So I just need to get you confirmed on my end. Have you gotten the calendar invite email?"
+→ "Awesome, I look forward to it. Just to confirm you'll be there, could you just hit Yes on the invitation in your email?"
 Then GO TO INVITE CHECK FLOW.
 
 3. INVITE CHECK FLOW:
