@@ -26,7 +26,7 @@ def _headers():
 
 
 def _build_prompt(
-    contact_name: str = "there",
+    contact_name: str = "Hunter",
     event_description: str = "your upcoming call",
     event_time_local: str = "your upcoming appointment",
     rsvp_status: str = "needs_action",
@@ -50,7 +50,7 @@ def _first_message(contact_name: str) -> str:
 
 def make_call(
     customer_number: str,
-    contact_name: str = "there",
+    contact_name: str = "Hunter",
     event_description: str = "a call with Settly",
     event_time_local: str = "your upcoming appointment",
     rsvp_status: str = "needs_action",
