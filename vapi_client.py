@@ -27,10 +27,8 @@ def _headers():
 
 def _build_prompt(
     contact_name: str = "Hunter",
-    event_description: str = "your upcoming call",
     event_time_local: str = "your upcoming appointment",
     rsvp_status: str = "needs_action",
-    call_reason: str = "just_booked",
     contact_email: str = "",
     company_name: str = "",
 ) -> str:
@@ -38,10 +36,8 @@ def _build_prompt(
     return (
         VOICE_SYSTEM_PROMPT
         .replace("{contact_name}", contact_name)
-        .replace("{event_description}", event_description)
         .replace("{event_time_local}", event_time_local)
         .replace("{rsvp_status}", rsvp_status)
-        .replace("{call_reason}", call_reason)
         .replace("{contact_email}", contact_email)
         .replace("{company_name}", company_name)
     )
@@ -55,14 +51,13 @@ def _first_message(contact_name: str) -> str:
 def make_call(
     customer_number: str,
     contact_name: str = "Hunter",
-    event_description: str = "a call with Settly",
     event_time_local: str = "your upcoming appointment",
     rsvp_status: str = "needs_action",
-    call_reason: str = "just_booked",
     contact_email: str = "",
     company_name: str = "",
     phone_number_id: Optional[str] = None,
     assistant_id: Optional[str] = None,
+    **kwargs,
 ) -> dict:
     """Make an outbound confirmation call with context-aware script."""
     aid = assistant_id or ASSISTANT_ID
@@ -70,10 +65,8 @@ def make_call(
 
     prompt = _build_prompt(
         contact_name=contact_name,
-        event_description=event_description,
         event_time_local=event_time_local,
         rsvp_status=rsvp_status,
-        call_reason=call_reason,
         contact_email=contact_email,
         company_name=company_name,
     )
@@ -87,9 +80,9 @@ def make_call(
             "firstMessage": first_msg,
             "model": {
                 "provider": "openai",
-                "model": "gpt-4o-mini",
+                "model": "gpt-4o",
                 "messages": [{"role": "system", "content": prompt}],
-                "temperature": 0.9,
+                "temperature": 0.7,
             },
         },
     }
