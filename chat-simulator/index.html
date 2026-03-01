@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Settly SMS Simulator</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f0f1a;
+    --panel-bg: #1a1a2e;
+    --card-bg: #242442;
+    --bubble-agent: #3a3a4a;
+    --bubble-contact: #34C759;
+    --text: #e0e0e0;
+    --text-dim: #888;
+    --accent: #6c5ce7;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --success: #34C759;
+    --border: #2a2a4a;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    height: 100vh;
+    gap: 0;
+  }
+
+  /* ===== LEFT: PHONE ===== */
+  .phone-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    padding: 20px;
+  }
+
+  .phone {
+    width: 375px;
+    height: 720px;
+    background: #000;
+    border-radius: 40px;
+    border: 3px solid #333;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .phone-header {
+    background: #1c1c1e;
+    padding: 50px 16px 12px;
+    text-align: center;
+    border-bottom: 1px solid #333;
+    flex-shrink: 0;
+  }
+
+  .phone-header .avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 16px;
+    margin-bottom: 4px;
+  }
+
+  .phone-header .contact-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+  }
+
+  .phone-header .contact-sub {
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .chat-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: #000;
+  }
+
+  .chat-area::-webkit-scrollbar { width: 4px; }
+  .chat-area::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+
+  .msg {
+    max-width: 75%;
+    padding: 9px 14px;
+    border-radius: 18px;
+    font-size: 15px;
+    line-height: 1.35;
+    animation: fadeIn 0.3s ease;
+    word-wrap: break-word;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg.agent {
+    background: var(--bubble-agent);
+    color: #fff;
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+  }
+
+  .msg.contact {
+    background: var(--bubble-contact);
+    color: #fff;
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+  }
+
+  .msg.system {
+    align-self: center;
+    background: none;
+    color: var(--text-dim);
+    font-size: 12px;
+    padding: 8px 0;
+  }
+
+  .msg-time {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 2px;
+    padding: 0 4px;
+  }
+
+  .msg-time.agent { align-self: flex-start; }
+  .msg-time.contact { align-self: flex-end; }
+
+  .typing {
+    align-self: flex-start;
+    background: var(--bubble-agent);
+    padding: 12px 18px;
+    border-radius: 18px;
+    border-bottom-left-radius: 4px;
+    display: none;
+  }
+
+  .typing span {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    background: #888;
+    border-radius: 50%;
+    margin: 0 1px;
+    animation: typingDot 1.4s infinite;
+  }
+
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes typingDot {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-4px); opacity: 1; }
+  }
+
+  .input-area {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: #1c1c1e;
+    border-top: 1px solid #333;
+    flex-shrink: 0;
+  }
+
+  .input-area input {
+    flex: 1;
+    background: #2c2c2e;
+    border: none;
+    border-radius: 20px;
+    padding: 10px 16px;
+    color: #fff;
+    font-size: 15px;
+    outline: none;
+  }
+
+  .input-area input::placeholder { color: #666; }
+
+  .input-area input:disabled { opacity: 0.4; }
+
+  .send-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: none;
+    color: #fff;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.2s;
+  }
+
+  .send-btn:hover { opacity: 0.8; }
+  .send-btn:disabled { opacity: 0.3; cursor: default; }
+
+  .terminal-banner {
+    display: none;
+    text-align: center;
+    padding: 10px;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    flex-shrink: 0;
+  }
+
+  .terminal-banner.confirmed { display: block; background: var(--success); color: #000; }
+  .terminal-banner.declined { display: block; background: var(--warning); color: #000; }
+  .terminal-banner.escalated { display: block; background: var(--danger); color: #fff; }
+
+  /* ===== RIGHT: DASHBOARD ===== */
+  .dashboard {
+    display: flex;
+    flex-direction: column;
+    background: var(--panel-bg);
+    border-left: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .dash-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .dash-header h1 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .dash-header h1 span {
+    color: var(--accent);
+  }
+
+  .mode-badge {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .mode-badge.ai { background: var(--accent); color: #fff; }
+  .mode-badge.rules { background: #444; color: #ccc; }
+
+  .dash-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .dash-tab {
+    flex: 1;
+    padding: 10px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dim);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+
+  .dash-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  .dash-panel {
+    display: none;
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 20px;
+  }
+
+  .dash-panel.active { display: flex; flex-direction: column; gap: 16px; }
+
+  .dash-panel::-webkit-scrollbar { width: 4px; }
+  .dash-panel::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+
+  /* Controls */
+  .control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .control-group label {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+
+  .control-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  select, input[type="range"], input[type="text"] {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    outline: none;
+  }
+
+  select:focus, input[type="text"]:focus {
+    border-color: var(--accent);
+  }
+
+  .slider-value {
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-danger:hover { opacity: 0.85; }
+  .btn-outline { background: none; border: 1px solid var(--border); color: var(--text-dim); }
+  .btn-outline:hover { border-color: var(--text); color: var(--text); }
+
+  .btn-row { display: flex; gap: 8px; }
+
+  /* State card */
+  .state-card {
+    background: var(--card-bg);
+    border-radius: 10px;
+    padding: 14px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .state-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .state-item .label {
+    font-size: 10px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    font-weight: 600;
+  }
+
+  .state-item .value {
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'SF Mono', monospace;
+  }
+
+  .state-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .state-badge.active { background: var(--accent); color: #fff; }
+  .state-badge.confirmed { background: var(--success); color: #000; }
+  .state-badge.declined { background: var(--warning); color: #000; }
+  .state-badge.escalated { background: var(--danger); color: #fff; }
+
+  /* Action log */
+  .log-entry {
+    background: var(--card-bg);
+    border-radius: 8px;
+    padding: 10px 12px;
+    border-left: 3px solid var(--accent);
+    animation: fadeIn 0.3s ease;
+  }
+
+  .log-entry .log-action {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  .log-entry .log-msg {
+    font-size: 13px;
+    color: var(--text);
+    margin: 4px 0;
+  }
+
+  .log-entry .log-reason {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-style: italic;
+  }
+
+  .log-entry .log-meta {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 4px;
+    font-family: monospace;
+  }
+
+  /* System prompt editor */
+  .prompt-editor {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+  }
+
+  .prompt-editor textarea {
+    flex: 1;
+    background: #0d0d1a;
+    border: 1px solid var(--border);
+    color: #b8c0e0;
+    padding: 14px;
+    border-radius: 8px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    resize: none;
+    outline: none;
+    min-height: 300px;
+  }
+
+  .prompt-editor textarea:focus {
+    border-color: var(--accent);
+  }
+
+  .prompt-status {
+    font-size: 11px;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .prompt-status .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--success);
+  }
+
+  .prompt-status .dot.modified {
+    background: var(--warning);
+  }
+
+  .char-count {
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .char-count.over { color: var(--danger); font-weight: 600; }
+
+  /* Error state */
+  .error-banner {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid var(--danger);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--danger);
+    display: none;
+  }
+
+  @media (max-width: 900px) {
+    .layout {
+      grid-template-columns: 1fr;
+      grid-template-rows: 60vh 40vh;
+    }
+    .phone-container { padding: 10px; }
+    .phone { width: 100%; height: 100%; border-radius: 0; border: none; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+  <!-- LEFT: PHONE -->
+  <div class="phone-container">
+    <div class="phone">
+      <div class="phone-header">
+        <div class="avatar">S</div>
+        <div class="contact-name">Settly</div>
+        <div class="contact-sub">SMS</div>
+      </div>
+      <div class="chat-area" id="chatArea"></div>
+      <div class="typing" id="typing">
+        <span></span><span></span><span></span>
+      </div>
+      <div class="terminal-banner" id="terminalBanner"></div>
+      <div class="input-area">
+        <input type="text" id="msgInput" placeholder="Type a message..." autocomplete="off">
+        <button class="send-btn" id="sendBtn">&#9650;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: DASHBOARD -->
+  <div class="dashboard">
+    <div class="dash-header">
+      <h1><span>Settly</span> SMS Engine</h1>
+      <span class="mode-badge ai" id="modeBadge">AI Mode</span>
+    </div>
+
+    <div class="dash-tabs">
+      <div class="dash-tab active" data-tab="controls">Controls</div>
+      <div class="dash-tab" data-tab="log">Action Log</div>
+      <div class="dash-tab" data-tab="prompt">System Prompt</div>
+    </div>
+
+    <!-- Controls Tab -->
+    <div class="dash-panel active" id="panel-controls">
+      <div class="error-banner" id="errorBanner"></div>
+
+      <div class="control-row">
+        <div class="control-group">
+          <label>Contact Name</label>
+          <input type="text" id="contactName" value="Sarah">
+        </div>
+        <div class="control-group">
+          <label>Event Time</label>
+          <input type="text" id="eventTime" value="Friday at 2:00 PM">
+        </div>
+      </div>
+
+      <div class="control-row">
+        <div class="control-group">
+          <label>RSVP Status</label>
+          <select id="rsvpStatus">
+            <option value="needsAction" selected>needsAction</option>
+            <option value="accepted">accepted</option>
+            <option value="declined">declined</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>Hours Until Event: <span class="slider-value" id="hoursValue">48</span>h</label>
+          <input type="range" id="hoursSlider" min="0" max="72" value="48" step="1">
+        </div>
+      </div>
+
+      <div class="state-card" id="stateCard">
+        <div class="state-item">
+          <span class="label">State</span>
+          <span class="value" id="stateValue"><span class="state-badge active">NEW</span></span>
+        </div>
+        <div class="state-item">
+          <span class="label">Attempt</span>
+          <span class="value" id="attemptValue">0</span>
+        </div>
+        <div class="state-item">
+          <span class="label">RSVP</span>
+          <span class="value" id="rsvpValue">needsAction</span>
+        </div>
+        <div class="state-item">
+          <span class="label">Last Action</span>
+          <span class="value" id="lastAction">—</span>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="firstOutreachBtn">Send First Outreach</button>
+        <button class="btn btn-danger" id="resetBtn">Reset</button>
+      </div>
+
+      <div class="control-group">
+        <label>Quick Test Messages</label>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+          <button class="btn btn-outline quick-msg" data-msg="yes">yes</button>
+          <button class="btn btn-outline quick-msg" data-msg="I can't make it">can't make it</button>
+          <button class="btn btn-outline quick-msg" data-msg="who is this?">who is this?</button>
+          <button class="btn btn-outline quick-msg" data-msg="stop texting me">stop</button>
+          <button class="btn btn-outline quick-msg" data-msg="Thursday at 3pm">reschedule time</button>
+          <button class="btn btn-outline quick-msg" data-msg="maybe">maybe</button>
+          <button class="btn btn-outline quick-msg" data-msg="done">done</button>
+          <button class="btn btn-outline quick-msg" data-msg="👍">👍</button>
+          <button class="btn btn-outline quick-msg" data-msg="wrong number">wrong #</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Log Tab -->
+    <div class="dash-panel" id="panel-log">
+      <div id="actionLog" style="display: flex; flex-direction: column; gap: 8px;"></div>
+    </div>
+
+    <!-- System Prompt Tab -->
+    <div class="dash-panel" id="panel-prompt">
+      <div class="prompt-editor">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div class="prompt-status">
+            <div class="dot" id="promptDot"></div>
+            <span id="promptStatusText">Using default prompt</span>
+          </div>
+          <button class="btn btn-outline" id="resetPromptBtn" style="font-size: 11px; padding: 4px 10px;">Reset to Default</button>
+        </div>
+        <textarea id="systemPrompt"></textarea>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span class="char-count" id="promptCharCount"></span>
+          <button class="btn btn-primary" id="savePromptBtn">Save & Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_BASE = 'http://localhost:8000';
+
+// ===== STATE =====
+let state = {
+  messages: [],       // { role: 'user'|'assistant', content: string }
+  currentState: 'NEW',
+  attempt: 0,
+  rsvpStatus: 'needsAction',
+  hoursUntil: 48,
+  contactName: 'Sarah',
+  eventTime: 'Friday at 2:00 PM',
+  terminal: false,
+  customPrompt: null,  // null = use server default
+};
+
+// ===== DOM =====
+const chatArea = document.getElementById('chatArea');
+const typing = document.getElementById('typing');
+const msgInput = document.getElementById('msgInput');
+const sendBtn = document.getElementById('sendBtn');
+const terminalBanner = document.getElementById('terminalBanner');
+const rsvpSelect = document.getElementById('rsvpStatus');
+const hoursSlider = document.getElementById('hoursSlider');
+const hoursValue = document.getElementById('hoursValue');
+const contactNameInput = document.getElementById('contactName');
+const eventTimeInput = document.getElementById('eventTime');
+const stateValue = document.getElementById('stateValue');
+const attemptValue = document.getElementById('attemptValue');
+const rsvpValue = document.getElementById('rsvpValue');
+const lastAction = document.getElementById('lastAction');
+const actionLog = document.getElementById('actionLog');
+const modeBadge = document.getElementById('modeBadge');
+const errorBanner = document.getElementById('errorBanner');
+const systemPromptArea = document.getElementById('systemPrompt');
+const promptDot = document.getElementById('promptDot');
+const promptStatusText = document.getElementById('promptStatusText');
+const promptCharCount = document.getElementById('promptCharCount');
+
+// ===== TABS =====
+document.querySelectorAll('.dash-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.dash-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.dash-panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+// ===== CONTROLS =====
+rsvpSelect.addEventListener('change', () => { state.rsvpStatus = rsvpSelect.value; updateDashboard(); });
+hoursSlider.addEventListener('input', () => { state.hoursUntil = +hoursSlider.value; hoursValue.textContent = hoursSlider.value; updateDashboard(); });
+contactNameInput.addEventListener('change', () => { state.contactName = contactNameInput.value; });
+eventTimeInput.addEventListener('change', () => { state.eventTime = eventTimeInput.value; });
+
+// ===== PROMPT EDITOR =====
+const DEFAULT_PROMPT_MARKER = '__USE_DEFAULT__';
+
+// Load prompt from server default on init
+fetch(API_BASE + '/chat/default-prompt').then(r => r.json()).then(data => {
+  if (data.prompt) {
+    systemPromptArea.value = data.prompt;
+    updatePromptStatus(false);
+  }
+}).catch(() => {
+  systemPromptArea.value = '(Could not load default prompt — is the server running?)';
+});
+
+systemPromptArea.addEventListener('input', () => {
+  updatePromptStatus(true);
+  promptCharCount.textContent = systemPromptArea.value.length + ' chars';
+});
+
+document.getElementById('savePromptBtn').addEventListener('click', () => {
+  state.customPrompt = systemPromptArea.value;
+  updatePromptStatus(true);
+  promptStatusText.textContent = 'Custom prompt active';
+});
+
+document.getElementById('resetPromptBtn').addEventListener('click', () => {
+  state.customPrompt = null;
+  fetch(API_BASE + '/chat/default-prompt').then(r => r.json()).then(data => {
+    if (data.prompt) systemPromptArea.value = data.prompt;
+    updatePromptStatus(false);
+    promptStatusText.textContent = 'Using default prompt';
+  });
+});
+
+function updatePromptStatus(modified) {
+  promptDot.className = 'dot' + (modified ? ' modified' : '');
+  promptCharCount.textContent = systemPromptArea.value.length + ' chars';
+}
+
+// ===== CHAT =====
+function addBubble(role, text) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + (role === 'user' ? 'contact' : 'agent');
+  div.textContent = text;
+  chatArea.appendChild(div);
+
+  const time = document.createElement('div');
+  time.className = 'msg-time ' + (role === 'user' ? 'contact' : 'agent');
+  time.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  chatArea.appendChild(time);
+
+  // Show char count for agent messages
+  if (role === 'assistant') {
+    const cc = document.createElement('div');
+    cc.className = 'msg-time agent' + (text.length > 160 ? ' over' : '');
+    cc.textContent = text.length + '/160 chars';
+    if (text.length > 160) cc.style.color = '#ef4444';
+    chatArea.appendChild(cc);
+  }
+
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function addSystemMsg(text) {
+  const div = document.createElement('div');
+  div.className = 'msg system';
+  div.textContent = text;
+  chatArea.appendChild(div);
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function showTyping() { typing.style.display = 'block'; chatArea.scrollTop = chatArea.scrollHeight; }
+function hideTyping() { typing.style.display = 'none'; }
+
+function setTerminal(type) {
+  state.terminal = true;
+  msgInput.disabled = true;
+  sendBtn.disabled = true;
+  terminalBanner.className = 'terminal-banner ' + type;
+  terminalBanner.textContent = type === 'confirmed' ? 'BOOKING CONFIRMED' :
+    type === 'declined' ? 'BOOKING DECLINED' : 'ESCALATED TO TEAM';
+  document.querySelectorAll('.quick-msg').forEach(b => b.disabled = true);
+  document.getElementById('firstOutreachBtn').disabled = true;
+}
+
+function updateDashboard() {
+  const badgeClass = state.terminal ?
+    (state.currentState === 'CONFIRMED' ? 'confirmed' : state.currentState === 'DECLINED' ? 'declined' : 'escalated') : 'active';
+  stateValue.innerHTML = `<span class="state-badge ${badgeClass}">${state.currentState}</span>`;
+  attemptValue.textContent = state.attempt;
+  rsvpValue.textContent = state.rsvpStatus;
+}
+
+function addLogEntry(action, msg, reason, attempt, rsvp, hours) {
+  const div = document.createElement('div');
+  div.className = 'log-entry';
+  div.innerHTML = `
+    <div class="log-action">${action}</div>
+    <div class="log-msg">"${msg}"</div>
+    <div class="log-reason">${reason}</div>
+    <div class="log-meta">attempt: ${attempt} | rsvp: ${rsvp} | hours: ${hours}h | chars: ${msg.length}</div>
+  `;
+  actionLog.insertBefore(div, actionLog.firstChild);
+}
+
+function showError(msg) {
+  errorBanner.textContent = msg;
+  errorBanner.style.display = 'block';
+}
+
+function hideError() {
+  errorBanner.style.display = 'none';
+}
+
+// ===== API CALLS =====
+async function sendToAgent(userMessage) {
+  if (state.terminal) return;
+
+  state.attempt++;
+
+  const body = {
+    message: userMessage || '',
+    history: state.messages,
+    rsvp_status: state.rsvpStatus,
+    attempt_number: state.attempt,
+    time_until_event_hours: state.hoursUntil,
+    contact_name: state.contactName,
+    event_time_local: state.eventTime,
+    current_state: state.currentState,
+  };
+
+  if (state.customPrompt) {
+    body.system_prompt = state.customPrompt;
+  }
+
+  showTyping();
+  hideError();
+
+  try {
+    const res = await fetch(API_BASE + '/chat/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    const data = await res.json();
+    hideTyping();
+
+    if (data.action === 'error') {
+      showError(data.message_to_user + ' — ' + data.reason);
+      modeBadge.className = 'mode-badge rules';
+      modeBadge.textContent = 'ERROR';
+      state.attempt--;
+      return;
+    }
+
+    // Add assistant message to history
+    const assistantContent = JSON.stringify({
+      message_to_user: data.message_to_user,
+      action: data.action,
+      reason: data.reason,
+    });
+    state.messages.push({ role: 'assistant', content: assistantContent });
+
+    addBubble('assistant', data.message_to_user);
+    lastAction.textContent = data.action;
+    addLogEntry(data.action, data.message_to_user, data.reason, state.attempt, state.rsvpStatus, state.hoursUntil);
+
+    // State transitions
+    if (data.action === 'confirm_attendance') {
+      state.currentState = 'CONFIRMED';
+      setTerminal('confirmed');
+    } else if (data.action === 'mark_declined') {
+      state.currentState = 'DECLINED';
+      setTerminal('declined');
+    } else if (data.action === 'escalate_high_risk') {
+      state.currentState = 'ESCALATED';
+      setTerminal('escalated');
+    } else if (state.currentState === 'NEW') {
+      state.currentState = 'FIRST_OUTREACH_SENT';
+    } else if (state.currentState === 'FIRST_OUTREACH_SENT') {
+      state.currentState = 'ACTIVE';
+    }
+
+    updateDashboard();
+
+  } catch (err) {
+    hideTyping();
+    showError('Cannot reach server. Is it running? (uvicorn main:app --port 8000)');
+    state.attempt--;
+  }
+}
+
+// ===== USER INPUT =====
+async function handleSend() {
+  const msg = msgInput.value.trim();
+  if (!msg || state.terminal) return;
+
+  msgInput.value = '';
+  addBubble('user', msg);
+
+  // Add to history
+  state.messages.push({ role: 'user', content: msg });
+
+  await sendToAgent(msg);
+}
+
+msgInput.addEventListener('keydown', e => { if (e.key === 'Enter') handleSend(); });
+sendBtn.addEventListener('click', handleSend);
+
+// Quick messages
+document.querySelectorAll('.quick-msg').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (state.terminal) return;
+    msgInput.value = btn.dataset.msg;
+    handleSend();
+  });
+});
+
+// First outreach
+document.getElementById('firstOutreachBtn').addEventListener('click', async () => {
+  if (state.terminal || state.attempt > 0) return;
+  addSystemMsg('— First outreach —');
+  await sendToAgent('');
+});
+
+// Reset
+document.getElementById('resetBtn').addEventListener('click', () => {
+  state = {
+    messages: [],
+    currentState: 'NEW',
+    attempt: 0,
+    rsvpStatus: 'needsAction',
+    hoursUntil: +hoursSlider.value,
+    contactName: contactNameInput.value,
+    eventTime: eventTimeInput.value,
+    terminal: false,
+    customPrompt: state.customPrompt,
+  };
+  chatArea.innerHTML = '';
+  actionLog.innerHTML = '';
+  terminalBanner.className = 'terminal-banner';
+  msgInput.disabled = false;
+  sendBtn.disabled = false;
+  lastAction.textContent = '—';
+  rsvpSelect.value = 'needsAction';
+  document.querySelectorAll('.quick-msg').forEach(b => b.disabled = false);
+  document.getElementById('firstOutreachBtn').disabled = false;
+  hideError();
+  updateDashboard();
+});
+
+// Init
+updateDashboard();
+</script>
+</body>
+</html>
