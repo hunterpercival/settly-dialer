@@ -45,7 +45,7 @@ def _build_prompt(
 
 def _first_message(contact_name: str) -> str:
     """Short opener — just confirm who you're talking to."""
-    return f"Hey this is Dan from Settly, is this {contact_name}?"
+    return f"Hey, is this {contact_name}?"
 
 
 def make_call(
