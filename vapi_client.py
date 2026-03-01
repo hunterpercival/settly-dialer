@@ -91,8 +91,8 @@ def make_call(
     resp.raise_for_status()
     data = resp.json()
     logger.info(
-        "Call initiated: %s -> %s (reason: %s, id: %s)",
-        pid, customer_number, call_reason, data.get("id"),
+        "Call initiated: %s -> %s (id: %s)",
+        pid, customer_number, data.get("id"),
     )
     return data
 
