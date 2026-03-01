@@ -108,10 +108,8 @@ async def make_call(request: Request):
     data = vapi_client.make_call(
         customer_number=body["customer_number"],
         contact_name=body.get("contact_name", "Hunter"),
-        event_description=body.get("event_description", "a call with Settly"),
         event_time_local=body.get("event_time_local", "your upcoming appointment"),
         rsvp_status=body.get("rsvp_status", "needs_action"),
-        call_reason=body.get("call_reason", "just_booked"),
         contact_email=body.get("contact_email", ""),
         company_name=body.get("company_name", ""),
         phone_number_id=body.get("phone_number_id"),
