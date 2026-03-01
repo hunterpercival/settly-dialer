@@ -31,6 +31,8 @@ def _build_prompt(
     event_time_local: str = "your upcoming appointment",
     rsvp_status: str = "needs_action",
     call_reason: str = "just_booked",
+    contact_email: str = "",
+    company_name: str = "",
 ) -> str:
     """Fill in the system prompt template with call-specific context."""
     return (
@@ -40,6 +42,8 @@ def _build_prompt(
         .replace("{event_time_local}", event_time_local)
         .replace("{rsvp_status}", rsvp_status)
         .replace("{call_reason}", call_reason)
+        .replace("{contact_email}", contact_email)
+        .replace("{company_name}", company_name)
     )
 
 
@@ -55,6 +59,8 @@ def make_call(
     event_time_local: str = "your upcoming appointment",
     rsvp_status: str = "needs_action",
     call_reason: str = "just_booked",
+    contact_email: str = "",
+    company_name: str = "",
     phone_number_id: Optional[str] = None,
     assistant_id: Optional[str] = None,
 ) -> dict:
@@ -68,6 +74,8 @@ def make_call(
         event_time_local=event_time_local,
         rsvp_status=rsvp_status,
         call_reason=call_reason,
+        contact_email=contact_email,
+        company_name=company_name,
     )
     first_msg = _first_message(contact_name)
 
