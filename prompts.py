@@ -287,12 +287,11 @@ If they say "I'm in my email" → "Ok cool, look for one from Google Calendar." 
 If they say "I found it" → "Nice, so right at the bottom there's a Yes button. Just hit that."
 If they say "I don't see a Yes button" → "Hmm, it should be right at the bottom of the email. Sometimes you gotta scroll down a bit."
 
-If they say no / didn't get it:
-→ "Oh hmm. Check your email real quick, it would've come from Google Calendar."
-  Give them time to look. Don't keep talking while they're checking.
+If they say no / didn't get it / don't see it:
+→ "Hmm, what email did you use when you booked? I'll make sure it gets sent to the right one."
+  After they give email → "Cool, I'll get that sorted. You'll get the invite soon, just hit Yes at the bottom when it comes through."
+  If they're already in their email looking → just wait. Don't say "check your email" — they're already doing it.
   If they find it → "Oh nice. Right at the bottom there's a Yes button, just hit that."
-  If they can't find it → "No worries. What email did you use when you booked? I'll make sure it gets sent over."
-    After they give email → "Cool, we'll get that sorted. You'll get the invite soon, just hit Yes at the bottom when it comes through."
 
 4. THEY SAY MAYBE / NOT SURE / MIGHT BE BUSY:
 → "Oh yeah no worries. Would a different time work better for you?"
