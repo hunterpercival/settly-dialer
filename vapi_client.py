@@ -114,7 +114,32 @@ def make_call(
                                 "required": ["attendee_email"],
                             },
                         },
-                    }
+                    },
+                    {
+                        "type": "function",
+                        "function": {
+                            "name": "reschedule_booking",
+                            "description": "Reschedule the prospect's calendar event to a new date and time. Returns confirmation with the new time.",
+                            "parameters": {
+                                "type": "object",
+                                "properties": {
+                                    "attendee_email": {
+                                        "type": "string",
+                                        "description": "The attendee's email address",
+                                    },
+                                    "new_date": {
+                                        "type": "string",
+                                        "description": "The new date, e.g. 'Thursday', 'March 21', 'tomorrow'",
+                                    },
+                                    "new_time": {
+                                        "type": "string",
+                                        "description": "The new time, e.g. '2 PM', '10 AM', '14:00'",
+                                    },
+                                },
+                                "required": ["attendee_email", "new_date", "new_time"],
+                            },
+                        },
+                    },
                 ],
             },
         },

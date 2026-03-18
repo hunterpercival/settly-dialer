@@ -31,22 +31,33 @@ async def vapi_webhook(request: Request):
         return JSONResponse({"ok": True})
 
     if message_type == "tool-calls":
-        # Proxy tool calls to the scheduling-platform's Vapi tools endpoint
-        logger.info("Tool call received, proxying to Settly API")
+        # Route tool calls to the appropriate Settly API endpoint
+        tool_calls = body.get("message", {}).get("toolCallList", [])
+        tool_name = tool_calls[0].get("function", {}).get("name", "") if tool_calls else ""
+        # Also check top-level name field (Vapi format varies)
+        if not tool_name and tool_calls:
+            tool_name = tool_calls[0].get("name", "")
+
+        endpoint_map = {
+            "check_rsvp_status": "/api/vapi/rsvp-check",
+            "reschedule_booking": "/api/vapi/reschedule",
+        }
+        endpoint = endpoint_map.get(tool_name, "/api/vapi/rsvp-check")
+        logger.info("Tool call received: %s → %s", tool_name, endpoint)
+
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 resp = await client.post(
-                    f"{settings.settly_api_url}/api/vapi/rsvp-check",
+                    f"{settings.settly_api_url}{endpoint}",
                     json=body,
                 )
                 return JSONResponse(content=resp.json(), status_code=resp.status_code)
         except Exception as e:
             logger.error("Tool call proxy failed: %s", e)
-            # Return error result so the voice agent can handle gracefully
-            tool_calls = body.get("message", {}).get("toolCallList", [])
             tool_call_id = tool_calls[0]["id"] if tool_calls else "unknown"
+            fallback = "not_yet" if tool_name == "check_rsvp_status" else "error: service unavailable"
             return JSONResponse({
-                "results": [{"toolCallId": tool_call_id, "result": "not_yet"}]
+                "results": [{"toolCallId": tool_call_id, "result": fallback}]
             })
 
     if message_type == "end-of-call-report":
