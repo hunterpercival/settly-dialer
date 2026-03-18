@@ -13,8 +13,7 @@ logger = logging.getLogger(__name__)
 
 BASE_URL = "https://api.vapi.ai"
 
-# Vapi IDs (set after initial setup)
-ASSISTANT_ID = "b4721723-481c-4813-b55e-4e2fdab65715"
+# Shared Vapi phone number (same across tenants)
 PHONE_NUMBER_ID = "8c869ab1-dbfa-43be-b743-7a7ae5ba1496"
 
 
@@ -26,11 +25,13 @@ def _headers():
 
 
 def _build_prompt(
-    contact_name: str = "Hunter",
+    contact_name: str = "there",
     event_time_local: str = "your upcoming appointment",
     rsvp_status: str = "needs_action",
     contact_email: str = "",
     company_name: str = "",
+    agent_name: str = "Dan",
+    call_purpose: str = "",
 ) -> str:
     """Fill in the system prompt template with call-specific context."""
     return (
@@ -40,6 +41,8 @@ def _build_prompt(
         .replace("{rsvp_status}", rsvp_status)
         .replace("{contact_email}", contact_email)
         .replace("{company_name}", company_name)
+        .replace("{agent_name}", agent_name)
+        .replace("{call_purpose}", call_purpose or "a Discovery call")
     )
 
 
@@ -50,17 +53,21 @@ def _first_message(contact_name: str) -> str:
 
 def make_call(
     customer_number: str,
-    contact_name: str = "Hunter",
+    contact_name: str = "there",
     event_time_local: str = "your upcoming appointment",
     rsvp_status: str = "needs_action",
     contact_email: str = "",
     company_name: str = "",
+    agent_name: str = "Dan",
+    call_purpose: str = "",
     phone_number_id: Optional[str] = None,
     assistant_id: Optional[str] = None,
     **kwargs,
 ) -> dict:
     """Make an outbound confirmation call with context-aware script."""
-    aid = assistant_id or ASSISTANT_ID
+    if not assistant_id:
+        raise ValueError("assistant_id is required — each tenant must have their own Vapi assistant")
+    aid = assistant_id
     pid = phone_number_id or PHONE_NUMBER_ID
 
     prompt = _build_prompt(
@@ -69,6 +76,8 @@ def make_call(
         rsvp_status=rsvp_status,
         contact_email=contact_email,
         company_name=company_name,
+        agent_name=agent_name,
+        call_purpose=call_purpose,
     )
     first_msg = _first_message(contact_name)
 
@@ -102,10 +111,13 @@ def make_call(
 # ---------------------------------------------------------------------------
 
 def create_assistant(
-    name: str = "Dan - Settly Confirmation",
+    name: str = "Settly Confirmation Agent",
     server_url: Optional[str] = None,
+    voice_id: Optional[str] = None,
+    first_message: Optional[str] = None,
 ) -> dict:
     """Create a persistent Vapi assistant."""
+    vid = voice_id or "bIHbv24MWmeRgasZH58o"
     payload = {
         "name": name,
         "model": {
@@ -116,13 +128,13 @@ def create_assistant(
         },
         "voice": {
             "provider": "11labs",
-            "voiceId": "bIHbv24MWmeRgasZH58o",
+            "voiceId": vid,
             "stability": 0.25,
             "similarityBoost": 0.5,
             "style": 0.7,
             "useSpeakerBoost": True,
         },
-        "firstMessage": "Hey, it's Dan from Settly. I just saw you booked in — just wanna make sure you're still good to make it.",
+        "firstMessage": first_message or "Hey, is this {contact_name}?",
         "endCallMessage": "Cool, talk later!",
         "maxDurationSeconds": 210,
         "silenceTimeoutSeconds": 30,

@@ -68,18 +68,22 @@ async def reach_out(request: Request):
     body = await request.json()
     customer_number = body["customer_number"]
     contact_name = body.get("contact_name", "there")
-    event_description = body.get("event_description", "increasing your show rates")
+    event_description = body.get("event_description", "a Discovery call")
     event_time_local = body.get("event_time_local", "your upcoming appointment")
     rsvp_status = body.get("rsvp_status", "needs_action")
     call_reason = body.get("call_reason", "just_booked")
+    assistant_id = body.get("assistant_id")
+    from_number = body.get("from_number")
+    agent_name = body.get("agent_name", "Dan")
+    company_name = body.get("company_name", "Martell Growth Solutions")
 
     # Send SMS first
     sms_lines = [
-        f"hey {contact_name}, it's dan from settly",
-        f"i saw u booked in a call for {event_time_local} to go over {event_description}",
+        f"hey {contact_name}, it's {agent_name} from {company_name}",
+        f"i saw u booked in {event_description} for {event_time_local}",
         "could u accept the calendar invite so i know ur good to make it",
     ]
-    send_sms_background(customer_number, sms_lines)
+    send_sms_background(customer_number, sms_lines, from_number=from_number)
 
     # Then make the call
     call_data = vapi_client.make_call(
@@ -89,6 +93,9 @@ async def reach_out(request: Request):
         event_time_local=event_time_local,
         rsvp_status=rsvp_status,
         call_reason=call_reason,
+        assistant_id=assistant_id,
+        agent_name=agent_name,
+        company_name=company_name,
     )
 
     return {
@@ -107,11 +114,12 @@ async def make_call(request: Request):
     body = await request.json()
     data = vapi_client.make_call(
         customer_number=body["customer_number"],
-        contact_name=body.get("contact_name", "Hunter"),
+        contact_name=body.get("contact_name", "there"),
         event_time_local=body.get("event_time_local", "your upcoming appointment"),
         rsvp_status=body.get("rsvp_status", "needs_action"),
         contact_email=body.get("contact_email", ""),
-        company_name=body.get("company_name", ""),
+        company_name=body.get("company_name", "Martell Growth Solutions"),
+        agent_name=body.get("agent_name", "Dan"),
         phone_number_id=body.get("phone_number_id"),
         assistant_id=body.get("assistant_id"),
     )
@@ -125,29 +133,43 @@ async def send_text(request: Request):
     customer_number = body["customer_number"]
     contact_name = body.get("contact_name", "there")
     event_time_local = body.get("event_time_local", "your upcoming appointment")
-    event_description = body.get("event_description", "increasing your show rates")
+    event_description = body.get("event_description", "a Discovery call")
+    agent_name = body.get("agent_name", "Dan")
+    company_name = body.get("company_name", "Martell Growth Solutions")
 
+    from_number = body.get("from_number")
     lines = [
-        f"hey {contact_name}, it's dan from settly",
-        f"i saw u booked in a call for {event_time_local} to go over {event_description}",
+        f"hey {contact_name}, it's {agent_name} from {company_name}",
+        f"i saw u booked in {event_description} for {event_time_local}",
         "could u accept the calendar invite so i know ur good to make it",
     ]
-    send_sms_background(customer_number, lines)
+    send_sms_background(customer_number, lines, from_number=from_number)
     return {"status": "sent", "to": customer_number, "lines": lines}
 
 
 @app.post("/assistant/create")
 async def create_assistant(request: Request):
     body = await request.json() if await request.body() else {}
-    name = body.get("name", "Dan - Settly Confirmation")
+    name = body.get("name", "Confirmation Agent")
     server_url = body.get("server_url")
-    data = vapi_client.create_assistant(name=name, server_url=server_url)
+    voice_id = body.get("voice_id")
+    first_message = body.get("first_message")
+    data = vapi_client.create_assistant(
+        name=name, server_url=server_url,
+        voice_id=voice_id, first_message=first_message,
+    )
     return data
 
 
 @app.get("/assistant/list")
 async def list_assistants():
     return vapi_client.list_assistants()
+
+
+@app.patch("/assistant/{assistant_id}/update")
+async def update_assistant_endpoint(assistant_id: str, request: Request):
+    body = await request.json() if await request.body() else {}
+    return vapi_client.update_assistant(assistant_id, body)
 
 
 @app.get("/phone-numbers")
@@ -159,10 +181,11 @@ async def list_phone_numbers():
 async def import_phone_number(request: Request):
     body = await request.json() if await request.body() else {}
     assistant_id = body.get("assistant_id")
+    phone_number = body.get("phone_number", settings.twilio_phone_number)
     data = vapi_client.import_twilio_number(
         twilio_sid=settings.twilio_account_sid,
         twilio_token=settings.twilio_auth_token,
-        phone_number=settings.twilio_phone_number,
+        phone_number=phone_number,
         assistant_id=assistant_id,
     )
     return data
