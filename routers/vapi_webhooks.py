@@ -1,13 +1,15 @@
-"""Vapi server-url webhook — receives call events, sends SMS follow-ups."""
+"""Vapi server-url webhook — receives call events, sends SMS follow-ups, proxies tool calls."""
 from __future__ import annotations
 
 import logging
 import re
 import threading
 
+import httpx
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
+from config import settings
 from services.sms_service import send_sms_background
 
 logger = logging.getLogger(__name__)
@@ -27,6 +29,25 @@ async def vapi_webhook(request: Request):
         call_id = body["message"].get("call", {}).get("id")
         logger.info("Call %s status: %s", call_id, status)
         return JSONResponse({"ok": True})
+
+    if message_type == "tool-calls":
+        # Proxy tool calls to the scheduling-platform's Vapi tools endpoint
+        logger.info("Tool call received, proxying to Settly API")
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                resp = await client.post(
+                    f"{settings.settly_api_url}/api/vapi/rsvp-check",
+                    json=body,
+                )
+                return JSONResponse(content=resp.json(), status_code=resp.status_code)
+        except Exception as e:
+            logger.error("Tool call proxy failed: %s", e)
+            # Return error result so the voice agent can handle gracefully
+            tool_calls = body.get("message", {}).get("toolCallList", [])
+            tool_call_id = tool_calls[0]["id"] if tool_calls else "unknown"
+            return JSONResponse({
+                "results": [{"toolCallId": tool_call_id, "result": "not_yet"}]
+            })
 
     if message_type == "end-of-call-report":
         call_id = body["message"].get("call", {}).get("id")

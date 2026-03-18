@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     twilio_phone_number: str = ""
     claude_model: str = "claude-sonnet-4-20250514"
     database_path: str = "settly.db"
+    settly_api_url: str = "https://settly.up.railway.app"
 
     model_config = {"env_file": ".env"}
 

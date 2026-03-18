@@ -87,11 +87,31 @@ def make_call(
         "customer": {"number": customer_number},
         "assistantOverrides": {
             "firstMessage": first_msg,
+            "serverUrl": "https://dialer-production-8ca8.up.railway.app/vapi/webhook",
             "model": {
                 "provider": "openai",
                 "model": "gpt-4o",
                 "messages": [{"role": "system", "content": prompt}],
                 "temperature": 0.7,
+                "tools": [
+                    {
+                        "type": "function",
+                        "function": {
+                            "name": "check_rsvp_status",
+                            "description": "Check if the attendee has accepted the Google Calendar invite. Returns 'accepted', 'not_yet', or 'not_found'.",
+                            "parameters": {
+                                "type": "object",
+                                "properties": {
+                                    "attendee_email": {
+                                        "type": "string",
+                                        "description": "The attendee's email address",
+                                    }
+                                },
+                                "required": ["attendee_email"],
+                            },
+                        },
+                    }
+                ],
             },
         },
     }
@@ -118,13 +138,34 @@ def create_assistant(
 ) -> dict:
     """Create a persistent Vapi assistant."""
     vid = voice_id or "bIHbv24MWmeRgasZH58o"
+    webhook_url = server_url or "https://dialer-production-8ca8.up.railway.app/vapi/webhook"
     payload = {
         "name": name,
+        "serverUrl": webhook_url,
         "model": {
             "provider": "openai",
             "model": "gpt-4o-mini",
             "messages": [{"role": "system", "content": VOICE_SYSTEM_PROMPT}],
             "temperature": 0.9,
+            "tools": [
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "check_rsvp_status",
+                        "description": "Check if the attendee has accepted the Google Calendar invite. Returns 'accepted', 'not_yet', or 'not_found'.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "attendee_email": {
+                                    "type": "string",
+                                    "description": "The attendee's email address",
+                                }
+                            },
+                            "required": ["attendee_email"],
+                        },
+                    },
+                }
+            ],
         },
         "voice": {
             "provider": "11labs",
@@ -146,8 +187,6 @@ def create_assistant(
             "smartEndpointingEnabled": True,
         },
     }
-    if server_url:
-        payload["serverUrl"] = server_url
 
     resp = requests.post(f"{BASE_URL}/assistant", headers=_headers(), json=payload)
     resp.raise_for_status()
