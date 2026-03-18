@@ -21,18 +21,19 @@ def _get_client():
     return _client
 
 
-def send_sms(to: str, body: str) -> str:
+def send_sms(to: str, body: str, from_number: str | None = None) -> str:
     """Send an SMS via Twilio, splitting on newlines so each line is its own message.
 
     Returns the SID of the last message sent.
     """
     client = _get_client()
+    from_ = from_number or settings.twilio_phone_number
     lines = [line.strip() for line in body.split("\n") if line.strip()]
     last_sid = None
     for i, line in enumerate(lines):
         message = client.messages.create(
             body=line,
-            from_=settings.twilio_phone_number,
+            from_=from_,
             to=to,
         )
         logger.info("SMS sent to %s (sid=%s): %s", to, message.sid, line)
@@ -42,13 +43,14 @@ def send_sms(to: str, body: str) -> str:
     return last_sid
 
 
-def send_sms_lines(to: str, lines: list[str]):
+def send_sms_lines(to: str, lines: list[str], from_number: str | None = None):
     """Send each line as a separate SMS with delays."""
     client = _get_client()
+    from_ = from_number or settings.twilio_phone_number
     for i, line in enumerate(lines):
         client.messages.create(
             body=line,
-            from_=settings.twilio_phone_number,
+            from_=from_,
             to=to,
         )
         logger.info("SMS sent to %s: %s", to, line)
@@ -56,7 +58,7 @@ def send_sms_lines(to: str, lines: list[str]):
             time.sleep(2)
 
 
-def send_sms_background(to: str, lines: list[str]):
+def send_sms_background(to: str, lines: list[str], from_number: str | None = None):
     """Send SMS in a background thread so we don't block the webhook."""
-    thread = threading.Thread(target=send_sms_lines, args=(to, lines))
+    thread = threading.Thread(target=send_sms_lines, args=(to, lines, from_number))
     thread.start()

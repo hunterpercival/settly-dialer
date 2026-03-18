@@ -89,10 +89,9 @@ async def reach_out(request: Request):
     call_data = vapi_client.make_call(
         customer_number=customer_number,
         contact_name=contact_name,
-        event_description=event_description,
+        call_purpose=event_description,
         event_time_local=event_time_local,
         rsvp_status=rsvp_status,
-        call_reason=call_reason,
         assistant_id=assistant_id,
         agent_name=agent_name,
         company_name=company_name,
@@ -120,6 +119,7 @@ async def make_call(request: Request):
         contact_email=body.get("contact_email", ""),
         company_name=body.get("company_name", "Martell Growth Solutions"),
         agent_name=body.get("agent_name", "Dan"),
+        call_purpose=body.get("call_purpose") or body.get("event_description", ""),
         phone_number_id=body.get("phone_number_id"),
         assistant_id=body.get("assistant_id"),
     )

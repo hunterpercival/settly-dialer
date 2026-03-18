@@ -85,6 +85,10 @@ def make_call(
         "assistantId": aid,
         "phoneNumberId": pid,
         "customer": {"number": customer_number},
+        "metadata": {
+            "agent_name": agent_name,
+            "company_name": company_name,
+        },
         "assistantOverrides": {
             "firstMessage": first_msg,
             "serverUrl": "https://dialer-production-8ca8.up.railway.app/vapi/webhook",
