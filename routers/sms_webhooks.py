@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 import logging
+import os
 from datetime import datetime, timezone
 
+import httpx
 from fastapi import APIRouter, Request, Response
 
 import database as db
@@ -14,6 +16,41 @@ from state_machine import transition
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+SETTLY_API_URL = os.getenv("SETTLY_API_URL", "")
+SETTLY_WEBHOOK_SECRET = os.getenv("SETTLY_WEBHOOK_SECRET", "")
+
+
+async def _forward_to_settly(
+    phone: str,
+    body: str,
+    direction: str,
+    *,
+    user_id: str | None = None,
+    booking_id: str | None = None,
+    contact_id: str | None = None,
+    external_id: str | None = None,
+) -> None:
+    """Forward an SMS message to the Settly API. Failure is logged but never blocks."""
+    if not SETTLY_API_URL:
+        return
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            await client.post(
+                f"{SETTLY_API_URL}/api/webhooks/sms-inbound",
+                json={
+                    "phone": phone,
+                    "body": body,
+                    "direction_override": direction,
+                    "user_id": user_id,
+                    "booking_id": booking_id,
+                    "contact_id": contact_id,
+                    "external_id": external_id,
+                },
+                headers={"X-Settly-Secret": SETTLY_WEBHOOK_SECRET} if SETTLY_WEBHOOK_SECRET else {},
+            )
+    except Exception:
+        logger.exception("Failed to forward SMS to Settly (%s)", direction)
 
 
 def _hours_until(event_time_utc: str) -> float:
@@ -101,11 +138,19 @@ async def handle_inbound_sms(request: Request):
 
     result = await process_inbound(from_number, body)
 
-    if "error" not in result:
-        contact = await db.get_contact_by_phone(from_number)
+    # Forward inbound message to Settly
+    contact = await db.get_contact_by_phone(from_number)
+    await _forward_to_settly(from_number, body, "inbound")
+
+    if "error" not in result and contact:
         try:
             sms_service.send_sms(contact.phone, result["message_to_user"])
         except Exception:
             logger.exception("Failed to send SMS to %s", from_number)
+        else:
+            # Forward outbound reply to Settly
+            await _forward_to_settly(
+                from_number, result["message_to_user"], "outbound",
+            )
 
     return Response(status_code=200)
