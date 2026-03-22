@@ -149,8 +149,19 @@ def _build_follow_up_sms(summary: str, ended_reason: str, agent_name: str = "", 
     """Build SMS follow-up lines based on how the call went."""
     summary_lower = (summary or "").lower()
     sig = f"- {agent_name}" if agent_name else ""
+    intro = f"hey it's {agent_name} from {company_name}" if agent_name and company_name else "hey"
 
-    if "will accept" in summary_lower or "accept later" in summary_lower or "check" in summary_lower:
+    # Disconnected mid-call — ask to reconnect
+    if ended_reason in ("customer-ended-call", "customer-hangup") and len(summary_lower) < 200:
+        lines = [
+            f"{intro} — sorry if we got disconnected!",
+            "when would be a good time to call u back?",
+        ]
+        if sig: lines.append(sig)
+        return lines
+
+    # Said they'll check / do it later
+    if "will accept" in summary_lower or "accept later" in summary_lower or "check" in summary_lower or "do it later" in summary_lower:
         lines = [
             "hey it was good chatting",
             "just a reminder to accept the calendar invite when u get a sec",
@@ -159,6 +170,7 @@ def _build_follow_up_sms(summary: str, ended_reason: str, agent_name: str = "", 
         if sig: lines.append(sig)
         return lines
 
+    # Reschedule requested
     if "reschedule" in summary_lower or "different time" in summary_lower:
         lines = [
             "hey thanks for chatting",
@@ -168,22 +180,25 @@ def _build_follow_up_sms(summary: str, ended_reason: str, agent_name: str = "", 
         if sig: lines.append(sig)
         return lines
 
-    intro = f"hey it's {agent_name} from {company_name}" if agent_name and company_name else ""
-
+    # No answer / busy
     if ended_reason in ("customer-did-not-answer", "customer-busy", "no-answer"):
-        lines = []
-        if intro: lines.append(intro)
-        lines.append("tried giving u a call" if intro else "hey tried giving u a call")
-        lines.append("could u accept the calendar invite so i know ur good to make it")
+        lines = [
+            f"{intro} — tried giving u a call",
+            "when would be a good time to reach u?",
+        ]
+        if sig: lines.append(sig)
         return lines
 
+    # Voicemail
     if ended_reason == "voicemail":
-        lines = []
-        if intro: lines.append(intro)
-        lines.append("left u a voicemail" if intro else "hey left u a voicemail")
-        lines.append("just need u to accept the calendar invite so i know ur making it")
+        lines = [
+            f"{intro} — left u a voicemail",
+            "just need u to accept the calendar invite so i know ur making it",
+        ]
+        if sig: lines.append(sig)
         return lines
 
+    # Generic follow-up for any other non-confirmed ending
     if ended_reason not in ("assistant-error", "pipeline-error"):
         lines = [
             "hey just following up from the call",
