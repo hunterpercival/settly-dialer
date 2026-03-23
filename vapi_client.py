@@ -62,6 +62,7 @@ def make_call(
     call_purpose: str = "",
     phone_number_id: Optional[str] = None,
     assistant_id: Optional[str] = None,
+    system_prompt: Optional[str] = None,
     **kwargs,
 ) -> dict:
     """Make an outbound confirmation call with context-aware script."""
@@ -70,7 +71,7 @@ def make_call(
     aid = assistant_id
     pid = phone_number_id or PHONE_NUMBER_ID
 
-    prompt = _build_prompt(
+    prompt = system_prompt or _build_prompt(
         contact_name=contact_name,
         event_time_local=event_time_local,
         rsvp_status=rsvp_status,
@@ -237,8 +238,22 @@ def get_assistant(assistant_id: str) -> dict:
 
 
 def update_assistant(assistant_id: str, updates: dict) -> dict:
+    """Update a Vapi assistant. Accepts flat `voice_id` and maps it to the correct nested format."""
+    payload = {k: v for k, v in updates.items() if k != "voice_id"}
+
+    # Map flat voice_id -> nested Vapi voice object
+    if "voice_id" in updates and updates["voice_id"]:
+        payload["voice"] = {
+            "provider": "11labs",
+            "voiceId": updates["voice_id"],
+            "stability": 0.25,
+            "similarityBoost": 0.5,
+            "style": 0.7,
+            "useSpeakerBoost": True,
+        }
+
     resp = requests.patch(
-        f"{BASE_URL}/assistant/{assistant_id}", headers=_headers(), json=updates
+        f"{BASE_URL}/assistant/{assistant_id}", headers=_headers(), json=payload
     )
     resp.raise_for_status()
     return resp.json()
