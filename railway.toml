@@ -7,4 +7,3 @@ healthcheckPath = "/health"
 healthcheckTimeout = 30
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
-# Trigger Railway redeploy Mon 23 Mar 2026 15:01:29 PDT
