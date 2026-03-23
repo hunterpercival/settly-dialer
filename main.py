@@ -86,6 +86,7 @@ async def reach_out(request: Request):
     send_sms_background(customer_number, sms_lines, from_number=from_number)
 
     # Then make the call
+    system_prompt = body.get("system_prompt")
     call_data = vapi_client.make_call(
         customer_number=customer_number,
         contact_name=contact_name,
@@ -95,6 +96,7 @@ async def reach_out(request: Request):
         assistant_id=assistant_id,
         agent_name=agent_name,
         company_name=company_name,
+        system_prompt=system_prompt,
     )
 
     return {
@@ -122,6 +124,7 @@ async def make_call(request: Request):
         call_purpose=body.get("call_purpose") or body.get("event_description", ""),
         phone_number_id=body.get("phone_number_id"),
         assistant_id=body.get("assistant_id"),
+        system_prompt=body.get("system_prompt"),
     )
     return data
 
