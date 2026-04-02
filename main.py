@@ -74,7 +74,7 @@ async def reach_out(request: Request):
     call_reason = body.get("call_reason", "just_booked")
     assistant_id = body.get("assistant_id")
     from_number = body.get("from_number")
-    agent_name = body.get("agent_name", "Dan")
+    agent_name = body.get("agent_name", "Jenny")
     company_name = body.get("company_name", "Martell Growth Solutions")
 
     # Send SMS first
@@ -120,7 +120,7 @@ async def make_call(request: Request):
         rsvp_status=body.get("rsvp_status", "needs_action"),
         contact_email=body.get("contact_email", ""),
         company_name=body.get("company_name", "Martell Growth Solutions"),
-        agent_name=body.get("agent_name", "Dan"),
+        agent_name=body.get("agent_name", "Jenny"),
         call_purpose=body.get("call_purpose") or body.get("event_description", ""),
         phone_number_id=body.get("phone_number_id"),
         assistant_id=body.get("assistant_id"),
@@ -137,7 +137,7 @@ async def send_text(request: Request):
     contact_name = body.get("contact_name", "there")
     event_time_local = body.get("event_time_local", "your upcoming appointment")
     event_description = body.get("event_description", "a Discovery call")
-    agent_name = body.get("agent_name", "Dan")
+    agent_name = body.get("agent_name", "Jenny")
     company_name = body.get("company_name", "Martell Growth Solutions")
 
     from_number = body.get("from_number")

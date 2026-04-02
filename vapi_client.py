@@ -30,7 +30,7 @@ def _build_prompt(
     rsvp_status: str = "needs_action",
     contact_email: str = "",
     company_name: str = "",
-    agent_name: str = "Dan",
+    agent_name: str = "Jenny",
     call_purpose: str = "",
 ) -> str:
     """Fill in the system prompt template with call-specific context."""
@@ -58,7 +58,7 @@ def make_call(
     rsvp_status: str = "needs_action",
     contact_email: str = "",
     company_name: str = "",
-    agent_name: str = "Dan",
+    agent_name: str = "Jenny",
     call_purpose: str = "",
     phone_number_id: Optional[str] = None,
     assistant_id: Optional[str] = None,
